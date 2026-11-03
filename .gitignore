@@ -1,0 +1,27 @@
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+crash.log
+crash.*.log
+
+# Terraform variables
+*.tfvars
+*.tfvars.json
+
+# SSH private keys
+my-key-pair
+*.pem
+*.key
+
+# Sensitive backups
+terraform-state-backup.json
+
+# Ansible
+ansible.log
+
+# Operating system
+.DS_Store
+Thumbs.db
