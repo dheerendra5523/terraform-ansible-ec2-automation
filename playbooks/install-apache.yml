@@ -1,26 +1,40 @@
-- name: update the server
+
+---
+- name: Update servers and install Apache
   hosts: all
   become: yes
+
   tasks:
+    # Update package cache on Ubuntu and Debian
     - name: Update apt cache
-      apt:
+      ansible.builtin.apt:
         update_cache: yes
-        
+      when: ansible_os_family == "Debian"
+
+    # Update package cache on Amazon Linux and Red Hat
+    - name: Update dnf cache
+      ansible.builtin.dnf:
+        update_cache: yes
+      when: ansible_os_family == "RedHat"
+
+    # Install Apache on all servers
     - name: Install Apache
-      apt:
-        name: apache2
+      ansible.builtin.package:
+        name: "{{ 'apache2' if ansible_os_family == 'Debian' else 'httpd' }}"
         state: present
 
+    # Start and enable Apache
     - name: Start Apache service
-      service:
-        name: apache2
+      ansible.builtin.service:
+        name: "{{ 'apache2' if ansible_os_family == 'Debian' else 'httpd' }}"
         state: started
         enabled: yes
 
+    # Copy website content
     - name: Copy index.html to the server
-      copy:
+      ansible.builtin.copy:
         src: files/index.html
         dest: /var/www/html/index.html
-        owner: www-data
-        group: www-data
+        owner: "{{ 'www-data' if ansible_os_family == 'Debian' else 'apache' }}"
+        group: "{{ 'www-data' if ansible_os_family == 'Debian' else 'apache' }}"
         mode: '0644'

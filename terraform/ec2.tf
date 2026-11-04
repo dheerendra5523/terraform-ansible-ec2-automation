@@ -16,19 +16,20 @@ resource "aws_security_group" "my-sg" {
   name   = "my_sg"
   vpc_id = aws_default_vpc.default.id
 
+
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["152.59.121.3/32"]
-    description = "Allow SSH access from my IP address"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow SSH access from any address"
   }
   ingress {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["152.59.121.3/32"]
-    description = "Allow HTTP access from my IP address"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow HTTP access from any address"
 
   }
 
@@ -46,6 +47,8 @@ resource "aws_instance" "servers" {
   for_each               = var.instances
   ami                    = each.value.ami
   instance_type          = each.value.instance_type
+  associate_public_ip_address = true
+
   vpc_security_group_ids = [aws_security_group.my-sg.id]
   key_name               = aws_key_pair.my_key.key_name
   root_block_device {
