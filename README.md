@@ -38,6 +38,8 @@ EC2 Configuration
 - Linux (Ubuntu)
 - SSH
 - PowerShell
+- Github
+- html
 
 ## Project Structure
 
@@ -45,6 +47,9 @@ terraform-ansible-ec2-automation/
 |
 ├── inventories/
 │   └── dev/
+|___ playbooks/
+|     |__files/index.html
+|     |__install-apache.yml
 |
 ├── terraform/
 │   ├── ec2.tf
@@ -112,7 +117,7 @@ ansible all -i inventories/dev/hosts.ini -m ping
 Run a playbook:
 
 ```bash
-ansible-playbook -i inventories/dev/hosts.ini playbook.yml
+ansible-playbook -i inventories/dev/hosts.ini install-apache.yml
 ```
 
 ## Security
