@@ -1,27 +1,26 @@
 # Terraform
-**/.terraform/*
+**/.terraform/
 *.tfstate
 *.tfstate.*
 *.tfplan
-tfplan
-crash.log
-crash.*.log
-
-# Terraform variables
-*.tfvars
-*.tfvars.json
-
-# SSH private keys
-my-key-pair
-*.pem
-*.key
-
-# Sensitive backups
+**/tfplan
+*.backup
 terraform-state-backup.json
 
-# Ansible
-ansible.log
+# Private SSH keys
+**/my-key-pair
+**/derived-key
+*.pem
+*.ppk
 
-# Operating system
-.DS_Store
-Thumbs.db
+# Ansible
+*.retry
+
+# Python
+__pycache__/
+*.pyc
+
+# Environment variables
+.env
+.env.*
+!.env.example

@@ -1,0 +1,123 @@
+
+---
+- name: Deploy website using Docker
+  hosts: all
+  become: yes
+
+  vars:
+    # Replace this with your actual GHCR image name
+    docker_image: "ghcr.io/dheerendra5523/terraform-ansible-ec2-automation:latest"
+    container_name: "my-website-container"
+    host_port: 80
+    container_port: 80
+
+  tasks:
+
+    # --------------------------------
+    # 1. Install Docker
+    # --------------------------------
+
+    - name: Install Docker on Ubuntu
+      ansible.builtin.apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+      when: ansible_facts["distribution"] == "Ubuntu"
+
+    - name: Install Docker on Amazon Linux
+      ansible.builtin.dnf:
+        name: docker
+        state: present
+      when: ansible_facts["distribution"] == "Amazon"
+
+    # For RHEL, use Docker's official repository
+    - name: Install repository management tools on Red Hat
+      ansible.builtin.dnf:
+        name: dnf-plugins-core
+        state: present
+      when: ansible_facts["distribution"] == "RedHat"
+
+    - name: Add Docker repository on Red Hat
+      ansible.builtin.yum_repository:
+        name: docker-ce-stable
+        description: Docker CE Stable Repository
+        baseurl: "https://download.docker.com/linux/rhel/{{ ansible_facts['distribution_major_version'] }}/{{ ansible_facts['architecture'] }}/stable"
+        enabled: yes
+        gpgcheck: yes
+        gpgkey: https://download.docker.com/linux/rhel/gpg
+      when: ansible_facts["distribution"] == "RedHat"
+
+    - name: Install Docker Engine on Red Hat
+      ansible.builtin.dnf:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
+      when: ansible_facts["distribution"] == "RedHat"
+
+    # --------------------------------
+    # 2. Start Docker
+    # --------------------------------
+
+    - name: Start and enable Docker
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: yes
+
+    # --------------------------------
+    # 3. Stop host Apache
+    # --------------------------------
+
+    - name: Stop Apache on Ubuntu
+      ansible.builtin.service:
+        name: apache2
+        state: stopped
+        enabled: no
+      when: ansible_facts["os_family"] == "Debian"
+
+    - name: Stop Apache on Amazon Linux and Red Hat
+      ansible.builtin.service:
+        name: httpd
+        state: stopped
+        enabled: no
+      when: ansible_facts["os_family"] == "RedHat"
+
+    # --------------------------------
+    # 4. Pull Docker image from GHCR
+    # --------------------------------
+
+    - name: Pull website Docker image
+      ansible.builtin.command:
+        cmd: "docker pull {{ docker_image }}"
+      register: docker_pull
+      changed_when: "'Downloaded newer image' in docker_pull.stdout or 'Pull complete' in docker_pull.stdout"
+
+  
+    # --------------------------------
+    # 6. Run new container
+    # --------------------------------
+
+    - name: Run website container
+      ansible.builtin.command:
+        cmd: >
+          docker run -d
+          --name {{ container_name }}
+          --restart unless-stopped
+          -p {{ host_port }}:{{ container_port }}
+          {{ docker_image }}
+
+    # --------------------------------
+    # 7. Verify deployment
+    # --------------------------------
+
+    - name: Check running container
+      ansible.builtin.command:
+        cmd: "docker ps --filter name={{ container_name }}"
+      register: container_status
+      changed_when: false
+
+    - name: Display container status
+      ansible.builtin.debug:
+        var: container_status.stdout_lines

@@ -1,0 +1,62 @@
+name: Docker CI
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: set image name
+        run: echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      - name: build docker image
+        run: docker build -t "$IMAGE_NAME:${GITHUB_SHA:}" .
+
+      - name: run docker container
+        run: docker run -d  "$IMAGE_NAME:${GITHUB_SHA:}" -p 8080:80 --name my-apache-app
+
+      - name: test docker container
+        run: | 
+          for i in {1..5}; do
+            if curl --fail http://localhost:8080; then
+              exit 0
+            else
+              echo "Attempt $i failed! Retrying in 5 seconds..."
+              sleep 5
+            fi
+          done
+          echo "All attempts failed!"
+          exit 1
+
+      - name: log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: push docker image
+        if: github.event_name != 'pull_request'
+        run: |
+         docker push "$IMAGE_NAME:${GITHUB_SHA:}"
+         docker tag "$IMAGE_NAME:${GITHUB_SHA:}" "$IMAGE_NAME:latest"
+         docker push "$IMAGE_NAME:latest"
+
+      - name: cleanup docker container
+        if: always()
+        run: |
+          docker stop my-apache-app || true
+          docker rm my-apache-app || true
+
