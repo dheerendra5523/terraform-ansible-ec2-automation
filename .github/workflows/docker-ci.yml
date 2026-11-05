@@ -21,10 +21,13 @@ jobs:
         run: echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
 
       - name: build docker image
-        run: docker build -t "$IMAGE_NAME:${GITHUB_SHA:}" .
+        run: docker build -t "$IMAGE_NAME:${GITHUB_SHA}" .
 
       - name: run docker container
-        run: docker run -d  "$IMAGE_NAME:${GITHUB_SHA:}" -p 8080:80 --name my-apache-app
+        run: docker run -d \
+            -p 8080:80 \
+            --name my-apache-app \
+            "$IMAGE_NAME:${GITHUB_SHA}"
 
       - name: test docker container
         run: | 
@@ -50,8 +53,8 @@ jobs:
       - name: push docker image
         if: github.event_name != 'pull_request'
         run: |
-         docker push "$IMAGE_NAME:${GITHUB_SHA:}"
-         docker tag "$IMAGE_NAME:${GITHUB_SHA:}" "$IMAGE_NAME:latest"
+         docker push "$IMAGE_NAME:${GITHUB_SHA}"
+         docker tag "$IMAGE_NAME:${GITHUB_SHA}" "$IMAGE_NAME:latest"
          docker push "$IMAGE_NAME:latest"
 
       - name: cleanup docker container
