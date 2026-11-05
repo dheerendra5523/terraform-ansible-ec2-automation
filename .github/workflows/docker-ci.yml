@@ -24,7 +24,8 @@ jobs:
         run: docker build -t "$IMAGE_NAME:${GITHUB_SHA}" .
 
       - name: run docker container
-        run: docker run -d \
+        run: |
+            docker run -d \
             -p 8080:80 \
             --name my-apache-app \
             "$IMAGE_NAME:${GITHUB_SHA}"
